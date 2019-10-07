@@ -21,8 +21,33 @@ import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.*;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 public class ObjectMapperTest extends BaseMapTest
 {
+	
+	static class Users {
+		public ArrayList<User> users;
+		public Users(){
+			users = new ArrayList<User>();
+		}
+		public ArrayList<User> getUsers() {
+			return users;
+		}
+	
+		public void addUsers(User user) {
+			this.users.add(user);
+		}
+	
+		public void setUsers(ArrayList<User> user) {
+			this.users = user;
+		}
+	}
+
+	static class User {
+        public String name = null;
+    }
+
     static class Bean {
         int value = 3;
         
@@ -143,6 +168,29 @@ public class ObjectMapperTest extends BaseMapTest
         // and not just via SerializationConfig, but also via DeserializationConfig
         assertTrue(dc.isEnabled(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY));
         assertTrue(dc.shouldSortPropertiesAlphabetically());
+    }
+
+	public void testTokenLocation() throws Exception   
+    {
+        ObjectMapper m = new ObjectMapper();
+        
+		final String JSON = String.join("\r\n",
+		"{",
+			"\"users\" : [",
+				"{",
+					"name : \"1\"",
+				"}",
+			"]",
+		"}");
+
+		try {
+			Users users = m.readValue(JSON, Users.class);
+		} catch(JsonMappingException e) {
+			String x = (String) e.getMessage();
+			System.out.println(x);
+			int n = x.indexOf("line");
+			assertEquals("line: 4", x.substring(n, n+7));
+		}
     }
 
     public void testDeserializationContextCache() throws Exception   
